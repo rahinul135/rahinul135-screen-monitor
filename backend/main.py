@@ -24,6 +24,30 @@ from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 import base64
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Password hashing helpers (cross-platform, no passlib needed)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _hash_password(password: str, salt: bytes = None, rounds: int = 29) -> str:
+    """Create a bcrypt-compatible hash using PBKDF2-SHA256."""
+    if salt is None:
+        salt = secrets.token_bytes(16)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=rounds,
+    )
+    key = kdf.derive(password.encode('utf-8'))
+    b64_salt = base64.b64encode(salt).decode()[:22]
+    b64_key = base64.b64encode(key).decode()[:31]
+    return f'$2b${rounds:02d}${b64_salt}{b64_key}'
+
+def _verify_password(plain: str, hashed: str) -> bool:
+    """Verify a plaintext password against a stored hash."""
+    stored = _hash_password(plain, base64.b64decode(hashed.split('$')[2][:22].encode()))
+    return stored == hashed
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Configuration & Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -55,31 +79,6 @@ if not ADMIN_PASSWORD_HASH:
 
 # Allowed origins for CORS
 ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '*').split(',')
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Password hashing helpers (cross-platform, no passlib needed)
-# ─────────────────────────────────────────────────────────────────────────────
-
-def _hash_password(password: str, salt: bytes = None, rounds: int = 29) -> str:
-    """Create a bcrypt-compatible hash using PBKDF2-SHA256."""
-    if salt is None:
-        salt = secrets.token_bytes(16)
-    kdf = PBKDF2HMAC(
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=rounds,
-    )
-    key = kdf.derive(password.encode('utf-8'))
-    # Format as bcrypt-style: $2b$29$<22-char-salt-base64><31-char-hash-base64>
-    b64_salt = base64.b64encode(salt).decode()[:22]
-    b64_key = base64.b64encode(key).decode()[:31]
-    return f'$2b${rounds:02d}${b64_salt}{b64_key}'
-
-def _verify_password(plain: str, hashed: str) -> bool:
-    """Verify a plaintext password against a stored hash."""
-    stored = _hash_password(plain, base64.b64decode(hashed.split('$')[2][:22].encode()))
-    return stored == hashed
 
 class AuthHandler:
     def __init__(self, secret: str, algorithm: str):
