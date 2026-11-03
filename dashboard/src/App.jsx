@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Monitor, Bot, Settings, RefreshCw, Clock, User, Power, Search, Send, Trash2, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { Shield, Monitor, Bot, Settings as SettingsIcon, RefreshCw, Clock, User, Power, Search, Send, Trash2, Plus, CheckCircle, XCircle } from 'lucide-react';
 
 const API_URL = 'https://screen-monitor-cc1w.onrender.com';
 
@@ -48,7 +48,7 @@ export default function App() {
         {page === 'overview' && <Overview clients={clients} />}
         {page === 'clients' && <Clients clients={clients} token={token} />}
         {page === 'bots' && <Bots bots={bots} token={token} />}
-        {page === 'settings' && <Settings settings={settings} token={token} />}
+        {page === 'settings' && <SettingsView settings={settings} token={token} />}
       </main>
     </div>
   );
@@ -122,7 +122,7 @@ function Bots({ bots, token }) {
   );
 }
 
-function Settings({ settings, token }) {
+function SettingsView({ settings, token }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow max-w-lg">
       <h3 className="font-bold mb-4">Settings</h3>
